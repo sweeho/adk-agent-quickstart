@@ -1,16 +1,27 @@
 import json
 import random
 
-def analyze_data(data: str, analysis_type: str = "general") -> str:
+from google.adk.tools import ToolContext
+from adk_web_agent.tools.thought_tools import _emit_tool_thought, _complete_tool_thought
+
+
+def analyze_data(data: str, tool_context: ToolContext, analysis_type: str = "general") -> str:
     """Analyze the provided data and extract key insights.
 
     Args:
         data: The data to analyze, as a text string.
+        tool_context: The tool context for accessing shared state.
         analysis_type: Type of analysis - 'general', 'sentiment', 'trend', or 'comparison'.
 
     Returns:
         A JSON string with analysis results.
     """
+    # Emit "running" thought
+    thought_id = _emit_tool_thought(
+        tool_context, "analysis_agent",
+        f"Analyzing data ({analysis_type} analysis)..."
+    )
+
     insights = {
         "analysis_type": analysis_type,
         "data_points_analyzed": random.randint(5, 50),
@@ -25,18 +36,32 @@ def analyze_data(data: str, analysis_type: str = "general") -> str:
             "The primary trend suggests focusing on the main factors.",
         ],
     }
+
+    # Emit "completed" thought
+    _complete_tool_thought(
+        tool_context, thought_id,
+        f"Data analysis completed — {insights['data_points_analyzed']} data points analyzed"
+    )
+
     return json.dumps(insights, indent=2)
 
 
-def calculate_metrics(values: str) -> str:
+def calculate_metrics(values: str, tool_context: ToolContext) -> str:
     """Calculate basic statistical metrics from a comma-separated list of values.
 
     Args:
         values: Comma-separated numeric values to analyze.
+        tool_context: The tool context for accessing shared state.
 
     Returns:
         A JSON string with calculated metrics.
     """
+    # Emit "running" thought
+    thought_id = _emit_tool_thought(
+        tool_context, "analysis_agent",
+        "Calculating statistical metrics..."
+    )
+
     try:
         nums = [float(v.strip()) for v in values.split(",") if v.strip()]
     except ValueError:
@@ -52,4 +77,11 @@ def calculate_metrics(values: str) -> str:
         "max": round(max(nums), 2),
         "range": round(max(nums) - min(nums), 2),
     }
+
+    # Emit "completed" thought
+    _complete_tool_thought(
+        tool_context, thought_id,
+        f"Metrics calculated — {result['count']} values processed"
+    )
+
     return json.dumps(result, indent=2)

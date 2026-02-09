@@ -1,15 +1,26 @@
 import random
 import json
 
-def search_knowledge_base(query: str) -> str:
+from google.adk.tools import ToolContext
+from adk_web_agent.tools.thought_tools import _emit_tool_thought, _complete_tool_thought
+
+
+def search_knowledge_base(query: str, tool_context: ToolContext) -> str:
     """Search the internal knowledge base for information relevant to the query.
 
     Args:
         query: The search query to find relevant information.
+        tool_context: The tool context for accessing shared state.
 
     Returns:
         A JSON string with search results.
     """
+    # Emit "running" thought
+    thought_id = _emit_tool_thought(
+        tool_context, "research_agent",
+        f"Searching knowledge base for: {query}"
+    )
+
     # Simulated knowledge base results
     results = {
         "query": query,
@@ -22,18 +33,32 @@ def search_knowledge_base(query: str) -> str:
         ],
         "confidence": round(random.uniform(0.75, 0.98), 2),
     }
+
+    # Emit "completed" thought
+    _complete_tool_thought(
+        tool_context, thought_id,
+        f"Knowledge base search completed — {results['results_found']} results found"
+    )
+
     return json.dumps(results, indent=2)
 
 
-def web_search(query: str) -> str:
+def web_search(query: str, tool_context: ToolContext) -> str:
     """Search the web for up-to-date information about the query.
 
     Args:
         query: The search query to look up online.
+        tool_context: The tool context for accessing shared state.
 
     Returns:
         A JSON string with web search results.
     """
+    # Emit "running" thought
+    thought_id = _emit_tool_thought(
+        tool_context, "research_agent",
+        f"Searching the web for: {query}"
+    )
+
     results = {
         "query": query,
         "web_results": [
@@ -42,4 +67,11 @@ def web_search(query: str) -> str:
         ],
         "total_results": random.randint(100, 10000),
     }
+
+    # Emit "completed" thought
+    _complete_tool_thought(
+        tool_context, thought_id,
+        f"Web search completed — {results['total_results']} results found"
+    )
+
     return json.dumps(results, indent=2)

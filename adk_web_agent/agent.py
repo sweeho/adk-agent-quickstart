@@ -4,6 +4,7 @@ from google.genai import types
 from adk_web_agent.tools.research_tools import search_knowledge_base, web_search
 from adk_web_agent.tools.analysis_tools import analyze_data, calculate_metrics
 from adk_web_agent.tools.summary_tools import format_report, extract_key_points
+from adk_web_agent.tools.thought_tools import emit_thought
 
 # Sub-agent 1: Research Agent
 research_agent = LlmAgent(
@@ -94,7 +95,19 @@ Strategy guidelines:
 - For comprehensive requests: Use Research Agent → Analysis Agent → Summary Agent in sequence.
 - Always synthesize the results from sub-agents into a clear, helpful final response.
 
+**IMPORTANT - Thought Stream Reporting:**
+Before delegating to any sub-agent, you MUST use the emit_thought tool to report your reasoning:
+- agent_name: "root_agent"
+- message: a brief description of your plan (e.g. "Delegating to Research Agent for information gathering")
+- status: "running"
+
+After receiving results from sub-agents, emit a completed thought:
+- agent_name: "root_agent"
+- message: a brief summary of what was accomplished
+- status: "completed"
+
 Be transparent about which agents you're using and why. Provide comprehensive, well-structured answers.""",
+    tools=[emit_thought],
     sub_agents=[research_agent, analysis_agent, summary_agent],
     generate_content_config=types.GenerateContentConfig(
         thinking_config=types.ThinkingConfig(
