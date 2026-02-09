@@ -1,23 +1,17 @@
 from fastapi import FastAPI
 from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
-from google.adk.agents import LlmAgent
-import os
 from dotenv import load_dotenv
+
+from adk_web_agent.agent import root_agent
 
 load_dotenv()
 
-agent = LlmAgent(
-    name="assistant",
-    model="gemini-2.5-flash",
-    instruction="Be helpful and fun!"
-)
-
 adk_agent = ADKAgent(
-    adk_agent=agent,
-    app_name="demo_app",
+    adk_agent=root_agent,
+    app_name="agent_studio",
     user_id="demo_user",
     session_timeout_seconds=3600,
-    use_in_memory_services=True
+    use_in_memory_services=True,
 )
 
 app = FastAPI()
