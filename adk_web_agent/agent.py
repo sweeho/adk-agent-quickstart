@@ -107,10 +107,16 @@ Be transparent about which agents you're using and why. Provide comprehensive, w
 
 # --- FastAPI Server ---
 if __name__ == "__main__":
+    import logging
     from fastapi import FastAPI
     from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
     from dotenv import load_dotenv
     import uvicorn
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    )
 
     load_dotenv()
 
