@@ -20,7 +20,7 @@ Multi-agent orchestration using Google ADK:
 ## Starting ADK Agent
 1. Open terminal 1
 2. Change directory `cd adk-agent-quickstart`
-3. Execute `uv run python -m adk_web_agent.main`
+3. Execute `uv run python -m adk_web_agent.agent`
 
 ## Starting CopilotKit App
 1. Open terminal 2

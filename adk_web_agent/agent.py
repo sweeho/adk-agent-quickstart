@@ -1,4 +1,5 @@
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 from adk_web_agent.tools.research_tools import search_knowledge_base, web_search
 from adk_web_agent.tools.analysis_tools import analyze_data, calculate_metrics
@@ -19,6 +20,12 @@ When given a query:
 
 Always cite your sources and indicate confidence levels.""",
     tools=[search_knowledge_base, web_search],
+    generate_content_config=types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(
+            include_thoughts=True,
+            thinking_budget=1024,
+        )
+    ),
 )
 
 # Sub-agent 2: Analysis Agent
@@ -37,6 +44,12 @@ When given data or a question requiring analysis:
 
 Always explain your reasoning and methodology.""",
     tools=[analyze_data, calculate_metrics],
+    generate_content_config=types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(
+            include_thoughts=True,
+            thinking_budget=1024,
+        )
+    ),
 )
 
 # Sub-agent 3: Summary Agent
@@ -54,6 +67,12 @@ When given content to summarize:
 
 Always maintain accuracy while improving readability.""",
     tools=[format_report, extract_key_points],
+    generate_content_config=types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(
+            include_thoughts=True,
+            thinking_budget=1024,
+        )
+    ),
 )
 
 # Root orchestrator agent with sub-agents
@@ -77,4 +96,33 @@ Strategy guidelines:
 
 Be transparent about which agents you're using and why. Provide comprehensive, well-structured answers.""",
     sub_agents=[research_agent, analysis_agent, summary_agent],
+    generate_content_config=types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(
+            include_thoughts=True,
+            thinking_budget=1024,
+        )
+    ),
 )
+
+
+# --- FastAPI Server ---
+if __name__ == "__main__":
+    from fastapi import FastAPI
+    from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
+    from dotenv import load_dotenv
+    import uvicorn
+
+    load_dotenv()
+
+    adk_agent = ADKAgent(
+        adk_agent=root_agent,
+        app_name="agent_studio",
+        user_id="demo_user",
+        session_timeout_seconds=3600,
+        use_in_memory_services=True,
+    )
+
+    app = FastAPI()
+    add_adk_fastapi_endpoint(app, adk_agent, path="/")
+
+    uvicorn.run(app, host="localhost", port=8000)
