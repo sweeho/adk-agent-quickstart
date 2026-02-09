@@ -10,3 +10,6 @@ wheels/
 .venv
 
 .env
+
+**/session.db
+**/.adk/session.db
