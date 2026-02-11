@@ -121,10 +121,17 @@ Be transparent about which agents you're using and why. Provide comprehensive, w
 # --- FastAPI Server ---
 if __name__ == "__main__":
     import logging
-    from fastapi import FastAPI
+    import asyncio
+    from contextlib import asynccontextmanager
+    from fastapi import FastAPI, Request
     from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
     from dotenv import load_dotenv
     import uvicorn
+
+    from adk_web_agent.database.db import init_db
+    from adk_web_agent.routes.auth import router as auth_router
+    from adk_web_agent.routes.sessions import router as sessions_router
+    from adk_web_agent.routes.admin import router as admin_router
 
     logging.basicConfig(
         level=logging.DEBUG,
@@ -132,6 +139,12 @@ if __name__ == "__main__":
     )
 
     load_dotenv()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Initialize database on startup."""
+        await init_db()
+        yield
 
     adk_agent = ADKAgent(
         adk_agent=root_agent,
@@ -141,7 +154,14 @@ if __name__ == "__main__":
         use_in_memory_services=True,
     )
 
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
+
+    # Include REST API routers
+    app.include_router(auth_router)
+    app.include_router(sessions_router)
+    app.include_router(admin_router)
+
+    # ADK agent endpoint
     add_adk_fastapi_endpoint(app, adk_agent, path="/")
 
     uvicorn.run(app, host="localhost", port=8000)
