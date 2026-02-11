@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS messages (
     user_id TEXT NOT NULL,
     role TEXT NOT NULL,                -- 'user' or 'assistant'
     content TEXT NOT NULL,
+    thought_summary TEXT,              -- Gemini thought summary (if available)
+    delegated_agent TEXT,              -- Which agent produced this response
+    delegation_chain TEXT,             -- JSON array of delegation path
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     agent_execution_id TEXT,           -- Link to agent execution
     FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE,
@@ -49,6 +52,10 @@ CREATE TABLE IF NOT EXISTS agent_executions (
     user_id TEXT NOT NULL,
     main_agent_data TEXT,              -- JSON: main agent execution details
     sub_agents_data TEXT,              -- JSON: array of sub-agent executions
+    thought_summary TEXT,              -- Gemini thought summary
+    delegated_agent TEXT,              -- Final agent that handled work
+    delegation_chain TEXT,             -- JSON array of delegation path
+    thinking_tokens INTEGER,           -- Thinking tokens consumed
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
     duration_ms INTEGER,

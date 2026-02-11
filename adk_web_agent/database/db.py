@@ -18,7 +18,7 @@ async def get_db() -> aiosqlite.Connection:
 
 
 async def init_db():
-    """Initialize the database: create tables and seed default admin user."""
+    """Initialize the database: create tables, run migrations, and seed default admin user."""
     from adk_web_agent.auth.password import hash_password
 
     db = await get_db()
@@ -26,6 +26,9 @@ async def init_db():
         # Create tables from schema
         schema_sql = SCHEMA_PATH.read_text()
         await db.executescript(schema_sql)
+
+        # Run migrations for existing databases
+        await _run_migrations(db)
 
         # Seed admin user if users table is empty
         cursor = await db.execute("SELECT COUNT(*) FROM users")
@@ -48,3 +51,28 @@ async def init_db():
             print(f"[init_db] Users table already has {count} user(s), skipping seed.")
     finally:
         await db.close()
+
+
+async def _run_migrations(db: aiosqlite.Connection):
+    """Add columns that may be missing in older databases."""
+    migrations = [
+        # Messages table: thought summary & delegation columns
+        ("messages", "thought_summary", "ALTER TABLE messages ADD COLUMN thought_summary TEXT"),
+        ("messages", "delegated_agent", "ALTER TABLE messages ADD COLUMN delegated_agent TEXT"),
+        ("messages", "delegation_chain", "ALTER TABLE messages ADD COLUMN delegation_chain TEXT"),
+        # Agent executions table: thought & delegation columns
+        ("agent_executions", "thought_summary", "ALTER TABLE agent_executions ADD COLUMN thought_summary TEXT"),
+        ("agent_executions", "delegated_agent", "ALTER TABLE agent_executions ADD COLUMN delegated_agent TEXT"),
+        ("agent_executions", "delegation_chain", "ALTER TABLE agent_executions ADD COLUMN delegation_chain TEXT"),
+        ("agent_executions", "thinking_tokens", "ALTER TABLE agent_executions ADD COLUMN thinking_tokens INTEGER"),
+    ]
+    for table, column, sql in migrations:
+        try:
+            cursor = await db.execute(f"PRAGMA table_info({table})")
+            columns = [row[1] for row in await cursor.fetchall()]
+            if column not in columns:
+                await db.execute(sql)
+                print(f"[migration] Added column {table}.{column}")
+        except Exception as e:
+            print(f"[migration] Skipping {table}.{column}: {e}")
+    await db.commit()

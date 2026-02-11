@@ -5,11 +5,25 @@ from adk_web_agent.tools.research_tools import search_knowledge_base, web_search
 from adk_web_agent.tools.analysis_tools import analyze_data, calculate_metrics
 from adk_web_agent.tools.summary_tools import format_report, extract_key_points
 from adk_web_agent.tools.thought_tools import emit_thought
+from adk_web_agent.tools.thinking_middleware import (
+    after_model_callback,
+    before_agent_callback,
+    after_agent_callback,
+)
+
+# --- Model & Thinking Configuration ---
+MODEL_NAME = "gemini-3-flash-preview"
+THINKING_CONFIG = types.GenerateContentConfig(
+    thinking_config=types.ThinkingConfig(
+        include_thoughts=True,
+        thinking_level="low",
+    )
+)
 
 # Sub-agent 1: Research Agent
 research_agent = LlmAgent(
     name="research_agent",
-    model="gemini-2.5-flash",
+    model=MODEL_NAME,
     description="Gathers information from knowledge bases and the web. Use this agent when the user asks a question that requires looking up information, facts, or current data.",
     instruction="""You are a Research Agent specializing in information gathering.
 Your job is to find relevant information using the tools available to you.
@@ -21,18 +35,16 @@ When given a query:
 
 Always cite your sources and indicate confidence levels.""",
     tools=[search_knowledge_base, web_search],
-    generate_content_config=types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            include_thoughts=True,
-            thinking_budget=1024,
-        )
-    ),
+    generate_content_config=THINKING_CONFIG,
+    before_agent_callback=before_agent_callback,
+    after_agent_callback=after_agent_callback,
+    after_model_callback=after_model_callback,
 )
 
 # Sub-agent 2: Analysis Agent
 analysis_agent = LlmAgent(
     name="analysis_agent",
-    model="gemini-2.5-flash",
+    model=MODEL_NAME,
     description="Analyzes data, identifies patterns, and provides insights. Use this agent when the user needs data analysis, comparisons, trend analysis, or statistical calculations.",
     instruction="""You are an Analysis Agent specializing in data processing and insight extraction.
 Your job is to analyze information and provide meaningful insights.
@@ -45,18 +57,16 @@ When given data or a question requiring analysis:
 
 Always explain your reasoning and methodology.""",
     tools=[analyze_data, calculate_metrics],
-    generate_content_config=types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            include_thoughts=True,
-            thinking_budget=1024,
-        )
-    ),
+    generate_content_config=THINKING_CONFIG,
+    before_agent_callback=before_agent_callback,
+    after_agent_callback=after_agent_callback,
+    after_model_callback=after_model_callback,
 )
 
 # Sub-agent 3: Summary Agent
 summary_agent = LlmAgent(
     name="summary_agent",
-    model="gemini-2.5-flash",
+    model=MODEL_NAME,
     description="Formats information into clear, well-structured reports and extracts key points. Use this agent when information needs to be organized, summarized, or formatted for presentation.",
     instruction="""You are a Summary Agent specializing in content organization and report generation.
 Your job is to take information and present it in a clear, structured format.
@@ -68,17 +78,15 @@ When given content to summarize:
 
 Always maintain accuracy while improving readability.""",
     tools=[format_report, extract_key_points],
-    generate_content_config=types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            include_thoughts=True,
-            thinking_budget=1024,
-        )
-    ),
+    generate_content_config=THINKING_CONFIG,
+    before_agent_callback=before_agent_callback,
+    after_agent_callback=after_agent_callback,
+    after_model_callback=after_model_callback,
 )
 
 # Root orchestrator agent with sub-agents
 root_agent = LlmAgent(
-    model="gemini-2.5-flash",
+    model=MODEL_NAME,
     name="root_agent",
     description="Main orchestrator that coordinates research, analysis, and summary agents to provide comprehensive answers.",
     instruction="""You are the Main Orchestrator Agent for Agent Studio, coordinating a team of specialized sub-agents.
@@ -109,12 +117,10 @@ After receiving results from sub-agents, emit a completed thought:
 Be transparent about which agents you're using and why. Provide comprehensive, well-structured answers.""",
     tools=[emit_thought],
     sub_agents=[research_agent, analysis_agent, summary_agent],
-    generate_content_config=types.GenerateContentConfig(
-        thinking_config=types.ThinkingConfig(
-            include_thoughts=True,
-            thinking_budget=1024,
-        )
-    ),
+    generate_content_config=THINKING_CONFIG,
+    before_agent_callback=before_agent_callback,
+    after_agent_callback=after_agent_callback,
+    after_model_callback=after_model_callback,
 )
 
 
